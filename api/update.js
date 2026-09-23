@@ -1,72 +1,80 @@
 export default async function handler(req, res) {
+
   if (req.method !== 'POST') {
     return res.status(405).json({
-      error: 'Method not allowed'
+      message: 'Method not allowed'
     });
   }
 
   try {
 
-    const { buttonUrl } = req.body;
+    const { whatsapp } = req.body;
 
-    const owner = 'bizmedia1';
-    const repo = 'prechlink-manager';
-    const path = 'data.json';
+    const GITHUB_USERNAME = 'bizmedia1';
+    const REPO_NAME = 'cta-control';
+    const FILE_PATH = 'config.json';
 
-    const token = process.env.GITHUB_TOKEN;
+    const TOKEN = process.env.GITHUB_TOKEN;
 
-    const fileResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    // GET CURRENT FILE
+    const currentFile = await fetch(
+      `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json'
+          Authorization: `Bearer ${TOKEN}`
         }
       }
     );
 
-    const fileData = await fileResponse.json();
+    const fileData = await currentFile.json();
 
-    const updatedContent = Buffer.from(
-      JSON.stringify(
-        {
-          buttonUrl
-        },
-        null,
-        2
-      )
+    // NEW CONTENT
+    const updatedContent = {
+      whatsapp
+    };
+
+    // ENCODE
+    const encodedContent = Buffer.from(
+      JSON.stringify(updatedContent, null, 2)
     ).toString('base64');
 
-    const updateResponse = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+    // UPDATE FILE
+    const update = await fetch(
+      `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`,
       {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github+json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${TOKEN}`
         },
         body: JSON.stringify({
-          message: `Update URL to ${buttonUrl}`,
-          content: updatedContent,
+          message: 'Updated WhatsApp link',
+          content: encodedContent,
           sha: fileData.sha
         })
       }
     );
 
-    const result = await updateResponse.json();
+    if (update.ok) {
 
-    return res.status(200).json({
-      success: true,
-      result
-    });
+      return res.status(200).json({
+        success: true
+      });
 
-  } catch (err) {
+    } else {
+
+      const error = await update.json();
+
+      return res.status(400).json(error);
+
+    }
+
+  } catch (error) {
 
     return res.status(500).json({
-      success: false,
-      error: err.message
+      message: error.message
     });
 
   }
+
 }
