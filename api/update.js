@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     const { whatsapp } = req.body;
 
     const GITHUB_USERNAME = 'bizmedia1';
-    const REPO_NAME = 'giftef-channel';
+    const REPO_NAME = 'gifted-channel';
     const FILE_PATH = 'config.json';
 
     const TOKEN = process.env.GITHUB_TOKEN;
